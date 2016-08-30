@@ -1,6 +1,6 @@
 import twisted.internet #provides twisted reactor, could do from twisted.internet import reactor instead
 import autobahn.twisted.websocket   #provides twisted ws instructions for factory, from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
-import uuid, json  #for identification and msg parsing
+import uuid, json, pprint  #for identification and msg parsing
 import twisted.web.xmlrpc  #enables XML_RPC commands over TCP  
 import twisted.web.server
 
@@ -38,6 +38,13 @@ class ServerFactory(autobahn.twisted.websocket.WebSocketServerFactory):
 			# call each clients sendMessage method
 			client.sendMessage(msg)
 
+	def broadcastUnity(self, msg):
+		#method to broadcast to clients of untiy type 
+		for session_id, client in self.clients.items():
+			if client.client_type == 'unity':
+				return client.unityCommand(msg)
+
+
 #protocol to handle clients
 class ServerProtocol(autobahn.twisted.websocket.WebSocketServerProtocol):
     def __init__(self, *args, **kwargs):
@@ -52,8 +59,8 @@ class ServerProtocol(autobahn.twisted.websocket.WebSocketServerProtocol):
     # clients can call this onMessage method
 	def onMessage(self, msg, isBinary):
 		try:
-			msg = json.loads(msg)[0]
-		except:
+			msg = json.loads(msg)[0
+]		except:
 			print "Message not JSON formatted string"
 			return
 
@@ -67,13 +74,29 @@ class ServerProtocol(autobahn.twisted.websocket.WebSocketServerProtocol):
 			except Exception,e:
 				 print "Not identified:", e
 
+
+	def connectionLost (self, reason):
+		WebSocketServerProtocol.connectionLost(self, reason)
+		if self.identified:
+			self.factory.unregister(self,self.session_id, self.identity)
+
+
 #Interface class allowing for XML_RPC commands from TCP connection
 class Interface(twisted.web.xmlrpc.XMLRPC):
 	#xmlrpc commands must start wtih xmlrpc_ ......
 	def xmlrpc_broadcast(self, msg):
 		return factory.broadcast(msg)
+
+	#xmlrpc to broadcast message to all Unity clients	
+	def xmlrpc_broadcastUnity(self, msg):
+		return factory.broadcastUnity(msg)
+ 	
+ 	def xmlrpc_activeClients(self):
+ 		identities = factory.client_identities.keys()
+ 		return pprint.pformat(identities)
+
+ 		
  
- #server side
 
 if __name__=='__main__':
     factory = ServerFactory("ws://localhost:9000", debug=False)
