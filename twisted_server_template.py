@@ -67,12 +67,14 @@ class ServerProtocol(autobahn.twisted.websocket.WebSocketServerProtocol):
 			except Exception,e:
 				 print "Not identified:", e
 
+#Interface class allowing for XML_RPC commands from TCP connection
 class Interface(twisted.web.xmlrpc.XMLRPC):
 	#xmlrpc commands must start wtih xmlrpc_ ......
 	def xmlrpc_broadcast(self, msg):
 		return factory.broadcast(msg)
  
  #server side
+
 if __name__=='__main__':
     factory = ServerFactory("ws://localhost:9000", debug=False)
     factory.protocol = ServerProtocol
